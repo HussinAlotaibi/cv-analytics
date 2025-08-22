@@ -80,6 +80,10 @@ def upload_file():
         # Get top words data for table
         top_words_data = analyzer.word_counts.most_common(20)
         
+        # Get AI analysis (will use mock data if no API key)
+        openai_api_key = os.environ.get('OPENAI_API_KEY')
+        ai_analysis = analyzer.get_ai_analysis(api_key=openai_api_key)
+        
         # Clean up uploaded file
         os.remove(filepath)
         
@@ -91,7 +95,8 @@ def upload_file():
             'year_mentions_chart': year_mentions_b64,
             'keyword_chart': keyword_chart_b64,
             'keyword_results': keyword_results,
-            'top_words_data': top_words_data
+            'top_words_data': top_words_data,
+            'ai_analysis': ai_analysis
         })
         
     except Exception as e:

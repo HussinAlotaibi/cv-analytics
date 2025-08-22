@@ -116,6 +116,72 @@
                 </div>
             </div>
 
+            <!-- AI Analysis Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <!-- Professional Summary -->
+                <div class="bg-blue-50 rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-bold text-blue-900 mb-4">🤖 AI Professional Summary</h2>
+                    <p id="aiSummary" class="text-gray-700 leading-relaxed">Analysis loading...</p>
+                </div>
+
+                <!-- Experience Level -->
+                <div class="bg-green-50 rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-bold text-green-900 mb-4">📊 Experience Assessment</h2>
+                    <div class="space-y-3">
+                        <div>
+                            <span class="font-semibold">Level: </span>
+                            <span id="experienceLevel" class="px-3 py-1 bg-green-200 text-green-800 rounded-full text-sm">-</span>
+                        </div>
+                        <div>
+                            <span class="font-semibold">Estimated Salary: </span>
+                            <span id="salaryRange" class="text-green-700 font-medium">-</span>
+                        </div>
+                        <div>
+                            <span class="font-semibold">Skills Match: </span>
+                            <span id="skillsMatch" class="text-green-700 font-medium">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Key Strengths -->
+                <div class="bg-purple-50 rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-bold text-purple-900 mb-4">🌟 Key Strengths</h2>
+                    <ul id="keyStrengths" class="space-y-2">
+                        <!-- Strengths will be populated here -->
+                    </ul>
+                </div>
+
+                <!-- Red Flags -->
+                <div class="bg-orange-50 rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-bold text-orange-900 mb-4">⚠️ Areas to Clarify</h2>
+                    <ul id="redFlags" class="space-y-2">
+                        <!-- Red flags will be populated here -->
+                    </ul>
+                </div>
+
+                <!-- Cultural Fit -->
+                <div class="bg-indigo-50 rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-bold text-indigo-900 mb-4">🏢 Cultural Fit Indicators</h2>
+                    <div id="culturalFit" class="grid grid-cols-2 gap-3">
+                        <!-- Cultural fit indicators will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Interview Questions -->
+                <div class="bg-yellow-50 rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-bold text-yellow-900 mb-4">💡 Suggested Interview Questions</h2>
+                    <ol id="interviewQuestions" class="list-decimal list-inside space-y-2 text-sm">
+                        <!-- Questions will be populated here -->
+                    </ol>
+                </div>
+            </div>
+
+            <!-- HR Recommendation -->
+            <div class="bg-gray-50 rounded-lg shadow-md p-6 mb-8">
+                <h2 class="text-xl font-bold text-gray-900 mb-4">🎯 HR Recommendation</h2>
+                <p id="hrRecommendation" class="text-gray-700 leading-relaxed">Loading recommendation...</p>
+            </div>
+
             <!-- Top Words Table -->
             <div class="bg-white rounded-lg shadow-md p-6">
                 <div class="flex justify-between items-center mb-4">
@@ -271,6 +337,68 @@
                 `;
                 tableBody.appendChild(row);
             });
+
+            // Display AI Analysis
+            if (data.ai_analysis) {
+                displayAIAnalysis(data.ai_analysis);
+            }
+        }
+
+        function displayAIAnalysis(aiData) {
+            // Professional Summary
+            document.getElementById('aiSummary').textContent = aiData.professional_summary;
+
+            // Experience Level
+            document.getElementById('experienceLevel').textContent = aiData.experience_level;
+            document.getElementById('salaryRange').textContent = '$' + aiData.estimated_salary_range;
+            document.getElementById('skillsMatch').textContent = aiData.skills_match_percentage + '%';
+
+            // Key Strengths
+            const strengthsList = document.getElementById('keyStrengths');
+            strengthsList.innerHTML = '';
+            aiData.key_strengths.forEach(strength => {
+                const li = document.createElement('li');
+                li.innerHTML = `<span class="text-purple-600">•</span> ${strength}`;
+                li.className = 'text-sm text-gray-700';
+                strengthsList.appendChild(li);
+            });
+
+            // Red Flags
+            const redFlagsList = document.getElementById('redFlags');
+            redFlagsList.innerHTML = '';
+            aiData.red_flags.forEach(flag => {
+                const li = document.createElement('li');
+                li.innerHTML = `<span class="text-orange-600">•</span> ${flag}`;
+                li.className = 'text-sm text-gray-700';
+                redFlagsList.appendChild(li);
+            });
+
+            // Cultural Fit
+            const culturalFitDiv = document.getElementById('culturalFit');
+            culturalFitDiv.innerHTML = '';
+            for (const [trait, level] of Object.entries(aiData.cultural_fit_indicators)) {
+                const div = document.createElement('div');
+                const colorClass = level === 'High' ? 'text-green-600' : level === 'Medium' ? 'text-yellow-600' : 'text-red-600';
+                div.innerHTML = `
+                    <span class="text-xs font-medium text-gray-600">${trait.replace('_', ' ')}</span>
+                    <div class="font-semibold ${colorClass}">${level}</div>
+                `;
+                div.className = 'text-center';
+                culturalFitDiv.appendChild(div);
+            }
+
+            // Interview Questions
+            const questionsList = document.getElementById('interviewQuestions');
+            questionsList.innerHTML = '';
+            aiData.interview_questions.forEach(question => {
+                const li = document.createElement('li');
+                li.textContent = question;
+                li.className = 'text-gray-700';
+                questionsList.appendChild(li);
+            });
+
+            // HR Recommendation
+            document.getElementById('hrRecommendation').textContent = aiData.hr_recommendation;
         }
 
         function resetUploadArea() {
