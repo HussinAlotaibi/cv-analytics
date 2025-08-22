@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CV Analytics Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .upload-area {
+            border: 2px dashed #3b82f6;
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .upload-area:hover {
+            border-color: #1d4ed8;
+            background-color: #eff6ff;
+        }
+        .upload-area.dragover {
+            border-color: #1d4ed8;
+            background-color: #dbeafe;
+        }
+        .loading {
+            display: none;
+        }
+        .results {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-7xl">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-900 mb-2">CV Analytics Dashboard</h1>
+            <p class="text-lg text-gray-600">Upload your CV to get comprehensive analysis and insights</p>
+        </div>
+
+        <!-- Upload Section -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <div class="upload-area" id="uploadArea">
+                <div class="mb-4">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </div>
+                <p class="text-lg font-medium text-gray-900 mb-2">Click to upload or drag and drop</p>
+                <p class="text-sm text-gray-500">PDF, DOCX, or TXT files (max 16MB)</p>
+                <input type="file" id="fileInput" class="hidden" accept=".pdf,.docx,.txt">
+            </div>
+            
+            <!-- Loading State -->
+            <div class="loading text-center py-8" id="loadingState">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <p class="mt-2 text-gray-600">Analyzing your CV...</p>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="results" id="resultsSection">
+            <!-- Summary Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-sm font-medium text-gray-500 mb-2">Total Words</h3>
+                    <p class="text-2xl font-bold text-blue-600" id="totalWords">-</p>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-sm font-medium text-gray-500 mb-2">Unique Words</h3>
+                    <p class="text-2xl font-bold text-green-600" id="uniqueWords">-</p>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-sm font-medium text-gray-500 mb-2">Characters</h3>
+                    <p class="text-2xl font-bold text-purple-600" id="totalChars">-</p>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-sm font-medium text-gray-500 mb-2">Years Mentioned</h3>
+                    <p class="text-2xl font-bold text-orange-600" id="yearsMentioned">-</p>
+                </div>
+            </div>
+
+            <!-- Charts Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <!-- Word Cloud -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-bold text-gray-900 mb-4">Word Cloud</h2>
+                    <div class="text-center">
+                        <img id="wordCloudImg" src="" alt="Word Cloud" class="max-w-full h-auto rounded">
+                    </div>
+                </div>
+
+                <!-- Top Words Chart -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-bold text-gray-900 mb-4">Top Words</h2>
+                    <div class="text-center">
+                        <img id="topWordsImg" src="" alt="Top Words Chart" class="max-w-full h-auto rounded">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Year Mentions Chart -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-8" id="yearMentionsSection">
+                <h2 class="text-xl font-bold text-gray-900 mb-4">Year Mentions</h2>
+                <div class="text-center">
+                    <img id="yearMentionsImg" src="" alt="Year Mentions Chart" class="max-w-full h-auto rounded">
+                </div>
+            </div>
+
+            <!-- Keyword Analysis -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+                <h2 class="text-xl font-bold text-gray-900 mb-4">Keyword Analysis</h2>
+                <div class="text-center">
+                    <img id="keywordImg" src="" alt="Keyword Analysis Chart" class="max-w-full h-auto rounded">
+                </div>
+            </div>
+
+            <!-- Top Words Table -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-gray-900">Top Words Details</h2>
+                    <button onclick="exportCSV()" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">
+                        Export CSV
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full table-auto">
+                        <thead>
+                            <tr class="bg-gray-50">
+                                <th class="px-4 py-2 text-left text-sm font-medium text-gray-500">#</th>
+                                <th class="px-4 py-2 text-left text-sm font-medium text-gray-500">Word</th>
+                                <th class="px-4 py-2 text-left text-sm font-medium text-gray-500">Frequency</th>
+                            </tr>
+                        </thead>
+                        <tbody id="topWordsTable">
+                            <!-- Table rows will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentAnalysisData = null;
+
+        // File upload handling
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const loadingState = document.getElementById('loadingState');
+        const resultsSection = document.getElementById('resultsSection');
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('dragover', handleDragOver);
+        uploadArea.addEventListener('dragleave', handleDragLeave);
+        uploadArea.addEventListener('drop', handleDrop);
+        fileInput.addEventListener('change', handleFileSelect);
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        }
+
+        function handleDragLeave(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                processFile(files[0]);
+            }
+        }
+
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (file) {
+                processFile(file);
+            }
+        }
+
+        function processFile(file) {
+            // Validate file type
+            const allowedTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
+            if (!allowedTypes.includes(file.type) && !file.name.toLowerCase().endsWith('.pdf') && !file.name.toLowerCase().endsWith('.docx') && !file.name.toLowerCase().endsWith('.txt')) {
+                alert('Please upload a PDF, DOCX, or TXT file.');
+                return;
+            }
+
+            // Validate file size (16MB)
+            if (file.size > 16 * 1024 * 1024) {
+                alert('File size must be less than 16MB.');
+                return;
+            }
+
+            // Show loading state
+            uploadArea.style.display = 'none';
+            loadingState.style.display = 'block';
+            resultsSection.style.display = 'none';
+
+            // Upload file
+            const formData = new FormData();
+            formData.append('file', file);
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    displayResults(data);
+                } else {
+                    alert('Error: ' + data.error);
+                    resetUploadArea();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while processing the file.');
+                resetUploadArea();
+            });
+        }
+
+        function displayResults(data) {
+            currentAnalysisData = data;
+            
+            // Hide loading, show results
+            loadingState.style.display = 'none';
+            resultsSection.style.display = 'block';
+
+            // Update summary cards
+            document.getElementById('totalWords').textContent = data.summary.total_words.toLocaleString();
+            document.getElementById('uniqueWords').textContent = data.summary.unique_words.toLocaleString();
+            document.getElementById('totalChars').textContent = data.summary.raw_text_length.toLocaleString();
+            document.getElementById('yearsMentioned').textContent = data.summary.years_mentioned;
+
+            // Display charts
+            if (data.word_cloud) {
+                document.getElementById('wordCloudImg').src = 'data:image/png;base64,' + data.word_cloud;
+            }
+            
+            if (data.top_words_chart) {
+                document.getElementById('topWordsImg').src = 'data:image/png;base64,' + data.top_words_chart;
+            }
+            
+            if (data.year_mentions_chart) {
+                document.getElementById('yearMentionsImg').src = 'data:image/png;base64,' + data.year_mentions_chart;
+                document.getElementById('yearMentionsSection').style.display = 'block';
+            } else {
+                document.getElementById('yearMentionsSection').style.display = 'none';
+            }
+            
+            if (data.keyword_chart) {
+                document.getElementById('keywordImg').src = 'data:image/png;base64,' + data.keyword_chart;
+            }
+
+            // Populate top words table
+            const tableBody = document.getElementById('topWordsTable');
+            tableBody.innerHTML = '';
+            data.top_words_data.forEach((item, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="px-4 py-2 text-sm text-gray-900">${index + 1}</td>
+                    <td class="px-4 py-2 text-sm font-medium text-gray-900">${item[0]}</td>
+                    <td class="px-4 py-2 text-sm text-gray-900">${item[1]}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        function resetUploadArea() {
+            uploadArea.style.display = 'block';
+            loadingState.style.display = 'none';
+            resultsSection.style.display = 'none';
+        }
+
+        function exportCSV() {
+            if (!currentAnalysisData) return;
+            
+            // Create CSV content
+            let csvContent = "Rank,Word,Frequency\n";
+            currentAnalysisData.top_words_data.forEach((item, index) => {
+                csvContent += `${index + 1},${item[0]},${item[1]}\n`;
+            });
+            
+            // Download CSV
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'cv_analysis_top_words.csv';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        }
+
+        // Reset button
+        function resetAnalysis() {
+            resetUploadArea();
+            fileInput.value = '';
+            currentAnalysisData = null;
+        }
+
+        // Add reset button to page
+        document.querySelector('.container').insertAdjacentHTML('beforeend', `
+            <div class="text-center mt-8">
+                <button onclick="resetAnalysis()" class="bg-gray-600 text-white px-6 py-2 rounded-md hover:bg-gray-700 transition-colors">
+                    Analyze Another CV
+                </button>
+            </div>
+        `);
+    </script>
+</body>
+</html>
