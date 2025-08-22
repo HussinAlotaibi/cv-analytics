@@ -182,6 +182,14 @@
                 <p id="hrRecommendation" class="text-gray-700 leading-relaxed">Loading recommendation...</p>
             </div>
 
+            <!-- PDF Report Generation -->
+            <div class="text-center mb-8">
+                <button onclick="generatePDFReport()" id="pdfButton" class="bg-red-600 text-white px-8 py-3 rounded-lg hover:bg-red-700 transition-colors shadow-lg font-semibold text-lg">
+                    📄 Generate PDF Report
+                </button>
+                <p class="text-sm text-gray-500 mt-2">Download a professional PDF report with all analysis results</p>
+            </div>
+
             <!-- Top Words Table -->
             <div class="bg-white rounded-lg shadow-md p-6">
                 <div class="flex justify-between items-center mb-4">
@@ -433,6 +441,60 @@
             resetUploadArea();
             fileInput.value = '';
             currentAnalysisData = null;
+        }
+
+        function generatePDFReport() {
+            if (!currentAnalysisData) {
+                alert('No analysis data available. Please analyze a CV first.');
+                return;
+            }
+
+            // Show loading state on button
+            const pdfButton = document.getElementById('pdfButton');
+            const originalText = pdfButton.textContent;
+            pdfButton.textContent = '⏳ Generating PDF...';
+            pdfButton.disabled = true;
+
+            // Send analysis data to generate PDF
+            fetch('/generate-pdf', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    ...currentAnalysisData,
+                    filename: currentAnalysisData.summary?.file_name || 'CV_Analysis'
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('PDF generation failed');
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                // Create download link
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `CV_Analysis_Report_${new Date().toISOString().slice(0, 10)}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                
+                // Reset button
+                pdfButton.textContent = originalText;
+                pdfButton.disabled = false;
+            })
+            .catch(error => {
+                console.error('Error generating PDF:', error);
+                alert('Error generating PDF report. Please try again.');
+                
+                // Reset button
+                pdfButton.textContent = originalText;
+                pdfButton.disabled = false;
+            });
         }
 
         // Add reset button to page
